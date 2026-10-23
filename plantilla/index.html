@@ -52,6 +52,8 @@
     .cta h2 { color: #fff; }
     footer { padding: 30px 0; text-align: center; font-size: .85rem; color: #888; }
 
+    [hidden] { display: none !important; }
+    .demo { background: #111; color: #fff; text-align: center; font-size: .8rem; padding: 6px 12px; }
     .wa { position: fixed; right: 20px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%; background: #25d366; display: grid; place-items: center; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 20; }
     .wa svg { width: 32px; fill: #fff; }
 
@@ -63,8 +65,9 @@
   </style>
 </head>
 <body>
+  <div class="demo" id="demo" hidden>Propuesta de diseño · versión de demostración</div>
   <nav><div class="wrap"><strong id="n-nombre"></strong>
-    <div class="links"><a href="#servicios">Servicios</a><a href="#opiniones">Opiniones</a><a href="#contacto">Contacto</a></div>
+    <div class="links"><a href="#servicios" id="n-serv">Servicios</a><a href="#opiniones">Opiniones</a><a href="#contacto">Contacto</a></div>
   </div></nav>
 
   <header class="hero" id="hero"><div class="wrap">
@@ -72,14 +75,14 @@
     <h1 id="h-eslogan"></h1>
     <p id="h-desc"></p>
     <div class="btns">
-      <a class="btn btn-main" id="b-cita" target="_blank" rel="noopener">Pedir cita por WhatsApp</a>
+      <a class="btn btn-main" id="b-cita" target="_blank" rel="noopener"></a>
       <a class="btn btn-ghost" id="b-tel">Llamar</a>
     </div>
     <div class="stars" id="h-stars"></div>
   </div></header>
 
   <section id="servicios"><div class="wrap">
-    <h2>Servicios y precios</h2>
+    <h2 id="t-serv"></h2>
     <div class="grid" id="l-servicios"></div>
   </div></section>
 
@@ -93,15 +96,15 @@
       <h2>Horario</h2>
       <table id="l-horario"></table>
       <p style="margin-top:24px"><b>Dirección:</b> <span id="c-dir"></span></p>
-      <p><b>Teléfono:</b> <a id="c-tel"></a></p>
+      <p id="p-tel"><b>Teléfono:</b> <a id="c-tel"></a></p>
       <p id="c-extra"></p>
     </div>
     <iframe id="mapa" loading="lazy" title="Mapa"></iframe>
   </div></section>
 
   <section class="cta"><div class="wrap">
-    <h2>¿Te reservamos hueco?</h2>
-    <a class="btn btn-main" id="b-cita2" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+    <h2 id="t-cta"></h2>
+    <a class="btn btn-main" id="b-cita2" target="_blank" rel="noopener"></a>
   </div></section>
 
   <footer id="pie"></footer>
@@ -113,31 +116,45 @@
   <script>
     const N = window.NEGOCIO, $ = (id) => document.getElementById(id);
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-    const wa = `https://wa.me/${N.whatsapp}?text=${encodeURIComponent(`Hola ${N.nombre}, me gustaría pedir cita.`)}`;
+    // Sin WhatsApp, los botones llevan a Instagram
+    const ig = N.instagram && `https://instagram.com/${N.instagram}`;
+    const wa = N.whatsapp
+      ? `https://wa.me/${N.whatsapp}?text=${encodeURIComponent(N.mensajeWhatsapp || `Hola ${N.nombre}, me gustaría pedir cita.`)}`
+      : ig;
 
     document.title = `${N.nombre} · ${N.tipo}`;
     document.documentElement.style.setProperty("--c", N.colorPrincipal);
     document.documentElement.style.setProperty("--d", N.colorOscuro);
     $("hero").style.backgroundImage = `url('${N.imagenCabecera}')`;
+    $("demo").hidden = !N.demo;
 
     $("n-nombre").textContent = N.nombre;
     $("h-tipo").textContent = N.tipo;
     $("h-eslogan").textContent = N.eslogan;
     $("h-desc").textContent = N.descripcion;
     if (N.notaGoogle) $("h-stars").textContent = `★★★★★  ${N.notaGoogle} en Google`;
+    $("b-cita").textContent = N.textoBoton || "Pedir cita por WhatsApp";
+    $("b-cita2").textContent = N.textoBotonFinal || "Escríbenos por WhatsApp";
+    $("t-cta").textContent = N.tituloFinal || "¿Te reservamos hueco?";
+    $("t-serv").textContent = $("n-serv").textContent = N.tituloServicios || "Servicios y precios";
     ["b-cita", "b-cita2", "b-wa"].forEach((id) => ($(id).href = wa));
-    $("b-tel").href = $("c-tel").href = `tel:${N.telefono.replace(/\s/g, "")}`;
-    $("c-tel").textContent = N.telefono;
+    if (!N.whatsapp) $("b-wa").hidden = true;
+    if (N.telefono) {
+      $("b-tel").href = $("c-tel").href = `tel:${N.telefono.replace(/\s/g, "")}`;
+      $("c-tel").textContent = N.telefono;
+    } else {
+      $("b-tel").hidden = $("p-tel").hidden = true;
+    }
     $("c-dir").textContent = N.direccion;
     $("c-extra").innerHTML = [
       N.email && `<b>Email:</b> <a href="mailto:${esc(N.email)}">${esc(N.email)}</a>`,
-      N.instagram && `<b>Instagram:</b> <a target="_blank" href="https://instagram.com/${esc(N.instagram)}">@${esc(N.instagram)}</a>`,
+      ig && `<b>Instagram:</b> <a target="_blank" href="${esc(ig)}">@${esc(N.instagram)}</a>`,
     ].filter(Boolean).join("<br>");
 
     $("l-servicios").innerHTML = N.servicios.map((s) =>
-      `<div class="card"><div class="row"><span>${esc(s.nombre)}</span><span class="price">${esc(s.precio)}</span></div><p>${esc(s.detalle)}</p></div>`).join("");
+      `<div class="card"><div class="row"><span>${esc(s.nombre)}</span><span class="price">${esc(s.precio || "")}</span></div><p>${esc(s.detalle)}</p></div>`).join("");
     $("l-resenas").innerHTML = N.resenas.map((r) =>
-      `<div class="card quote">“${esc(r.texto)}”<b>★★★★★ ${esc(r.autor)}</b></div>`).join("");
+      `<div class="card quote">“${esc(r.texto)}”<b>★★★★★ ${esc(r.autor || "Opinión en Google")}</b></div>`).join("");
     $("l-horario").innerHTML = N.horario.map(([d, h]) => `<tr><td>${esc(d)}</td><td>${esc(h)}</td></tr>`).join("");
     $("mapa").src = `https://maps.google.com/maps?q=${encodeURIComponent(N.direccion)}&output=embed`;
     $("pie").textContent = `© ${new Date().getFullYear()} ${N.nombre} · ${N.direccion}`;
